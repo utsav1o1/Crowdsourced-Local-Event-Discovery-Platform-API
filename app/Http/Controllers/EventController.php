@@ -16,6 +16,37 @@ class EventController extends Controller
         return response()->json($events, 200);
     }
 
+    public function nearby(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'latitude' => 'required|numeric|between:-90,90',
+                'longitude' => 'required|numeric|between:-180,180',
+                'radius' => 'required|numeric|min:1',
+            ]);
+    
+            $latitude = $validated['latitude'];
+            $longitude = $validated['longitude'];
+            $radius = $validated['radius'];
+    
+            $events = Event::selectRaw(
+                '*, (6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) AS distance',
+                [$latitude, $longitude, $latitude]
+            )
+            ->where('approved', true)
+            ->having('distance', '<', $radius)
+            ->orderBy('distance')
+            ->get();
+    
+            return response()->json($events, 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['message' => 'Validation Error', 'errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Something went wrong', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+
     /**
      * Store a newly created resource in storage.
      */

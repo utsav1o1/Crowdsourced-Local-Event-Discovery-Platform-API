@@ -7,6 +7,7 @@ use App\Http\Controllers\EventController;
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('events', [EventController::class, 'index']);
+    Route::get('events/nearby', [EventController::class, 'nearby']);
     Route::post('events', [EventController::class, 'store']);
     Route::get('events/{id}', [EventController::class, 'show']);
     Route::put('events/{id}', [EventController::class, 'update']);

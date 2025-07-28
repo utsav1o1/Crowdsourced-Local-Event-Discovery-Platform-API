@@ -3,6 +3,7 @@
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\getJson;
@@ -63,3 +64,41 @@ it('can show an existing event', function () {
                  ->etc()
         );
 });
+
+it('returns nearby events for authenticated user', function () {
+    
+    if (DB::connection()->getDriverName() === 'sqlite') {
+        $this->markTestSkipped('This test requires MySQL due to usage of geographic functions like ACOS, which are not supported in SQLite.');
+        return;
+    }
+    $user = User::factory()->create();
+
+    // Nearby event
+    Event::factory()->create([
+        'latitude' => 40.7128,
+        'longitude' => -74.0060,
+        'approved' => true,
+    ]);
+
+    // Far away event
+    Event::factory()->create([
+        'latitude' => 51.5074,
+        'longitude' => -0.1278,
+        'approved' => true,
+    ]);
+
+    $response = $this
+        ->actingAs($user,'sanctum')
+        ->getJson('/api/events/nearby?latitude=40.7128&longitude=-74.0060&radius=50');
+
+    $response->assertOk();
+    $response->assertJsonCount(1);
+    $response->assertJsonFragment(['latitude' => 40.7128]);
+});
+
+it('blocks unauthenticated access to nearby events', function () {
+    $response = $this->getJson('/api/events/nearby?latitude=40.7128&longitude=-74.0060&radius=50');
+
+    $response->assertStatus(401);
+});
+

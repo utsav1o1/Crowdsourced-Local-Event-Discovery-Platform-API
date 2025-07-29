@@ -65,9 +65,11 @@ class User extends Authenticatable
      * A user can attend many events.
      * This is a many-to-many relationship with extra pivot data.
      */
-    public function attendedEvents(): BelongsToMany
-    {
-        return $this->belongsToMany(Event::class)->withPivot('attended_at');
-    }
 
+    public function attendedEvents()
+    {
+        return $this->belongsToMany(Event::class)
+            ->withPivot('qr_code', 'attended_at')
+            ->withTimestamps();
+    }
 }

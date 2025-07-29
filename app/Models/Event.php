@@ -28,7 +28,9 @@ class Event extends Model
      */
     public function attendees(): BelongsToMany
     {
-        return $this->belongsToMany(User::class)->withPivot('attended_at');
+        return $this->belongsToMany(User::class)
+        ->withPivot('qr_code', 'attended_at')
+        ->withTimestamps();
     }
 
     public function getLocationAttribute()
